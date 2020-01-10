@@ -145,9 +145,11 @@ def parse_list(url):
             topic.save(force_insert=True) # 数据存在更新，不存在插入
 
         # 调用解析帖子详情页的函数
-        parse_topic(topic_url)
+        # parse_topic(topic_url)
+        executor.submit(parse_topic,topic_url)
+        executor.submit(parse_author,author_url)
         # 调用解析作者详情页的函数
-        parse_author(author_url)
+        # parse_author(author_url)
     
     # 获取下一页的url 注意：查看对应的class标签是否是全局唯一的
     next_page = sel.xpath("//div/a[10]/@href").extract()   
@@ -156,8 +158,8 @@ def parse_list(url):
         # 拼接完整url 
         next_url = parse.urljoin(domain,next_page[0])
         # 重复解析下一列表页
-        parse_list(next_url)
-
+        # parse_list(next_url)
+        executor.submit(parse_list,next_url)
 
 # 获取帖子的详情页和回复
 def parse_topic(url):
@@ -206,8 +208,8 @@ def parse_topic(url):
         # 拼接完整url
         next_url = parse.urljoin(domain, next_page[0])
         # 重复解析下一列表页
-        parse_topic(next_url)
-
+        # parse_topic(next_url)
+        executor.submit(parse_topic)
 
 # 获取用户的详情页
 def parse_author(url):
@@ -223,7 +225,11 @@ def parse_author(url):
 
 # 程序的执行入口
 if __name__ == '__main__':
+    # 导入线程池
+    from concurrent.futures import ThreadPoolExecutor
+    # 创建线程池对象，最多协程数量10个
+    executor = ThreadPoolExecutor(max_wokers=10)
     last_urls = get_last_list()
     for url in last_urls:
-        parse_topic(url)
-    parse_author("https://me.csdn.net/keith_terrell")
+        # 执行多任务
+        executor.submit(parse_list,url)
